@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#2d2440">
+  <meta name="description" content="Guided Reiki self-treatment timer with hand positions, chimes and voice guidance.">
+  <title>Reiki Timer</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HOME -->
+  <main id="view-home" class="view">
+    <header class="home-header">
+      <div class="logo">☸</div>
+      <h1 data-i18n="appName">Reiki Timer</h1>
+      <p class="tagline" data-i18n="tagline">Guided self-treatment sessions</p>
+    </header>
+    <div class="session-buttons">
+      <button id="btn-short" class="big-btn">
+        <span class="big-btn-title" data-i18n="startShort">Short session</span>
+        <span class="big-btn-sub" id="short-sub"></span>
+      </button>
+      <button id="btn-long" class="big-btn">
+        <span class="big-btn-title" data-i18n="startLong">Long session</span>
+        <span class="big-btn-sub" id="long-sub"></span>
+      </button>
+    </div>
+    <button id="btn-settings" class="ghost-btn">⚙ <span data-i18n="settings">Settings</span></button>
+  </main>
+
+  <!-- SESSION -->
+  <main id="view-session" class="view hidden">
+    <div class="session-top">
+      <div class="pos-count" id="pos-count"></div>
+      <h2 id="pos-title"></h2>
+    </div>
+
+    <div class="figure-wrap" id="figure-wrap"></div>
+    <p class="back-note hidden" id="back-note" data-i18n="backViewNote">Hands shown from behind</p>
+    <p class="pos-desc" id="pos-desc"></p>
+
+    <div class="interval-timer" id="interval-remaining">3:00</div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+    <div class="time-grid">
+      <div class="time-cell">
+        <span class="time-label" data-i18n="started">Started</span>
+        <span class="time-value" id="t-start">–</span>
+      </div>
+      <div class="time-cell">
+        <span class="time-label" data-i18n="ends">Ends</span>
+        <span class="time-value" id="t-end">–</span>
+      </div>
+      <div class="time-cell">
+        <span class="time-label" data-i18n="elapsed">Elapsed</span>
+        <span class="time-value" id="t-elapsed">–</span>
+      </div>
+      <div class="time-cell">
+        <span class="time-label" data-i18n="remaining">Remaining</span>
+        <span class="time-value" id="t-remaining">–</span>
+      </div>
+    </div>
+
+    <div class="session-controls">
+      <button id="btn-pause" class="ctrl-btn"><span data-i18n="pause">Pause</span></button>
+      <button id="btn-stop" class="ctrl-btn danger"><span data-i18n="stop">Stop</span></button>
+    </div>
+  </main>
+
+  <!-- COMPLETE -->
+  <main id="view-complete" class="view hidden">
+    <div class="complete-inner">
+      <div class="complete-icon">🙏</div>
+      <h2 data-i18n="complete">Session complete</h2>
+      <p data-i18n="completeMsg">Take a quiet moment before returning.</p>
+      <button id="btn-done" class="big-btn"><span class="big-btn-title" data-i18n="done">Done</span></button>
+    </div>
+  </main>
+
+  <!-- SETTINGS -->
+  <main id="view-settings" class="view hidden">
+    <header class="settings-header">
+      <button id="btn-back" class="ghost-btn">← <span data-i18n="back">Back</span></button>
+      <h2 data-i18n="settings">Settings</h2>
+    </header>
+
+    <div class="settings-list">
+      <label class="setting">
+        <span data-i18n="language">Language</span>
+        <select id="set-lang">
+          <option value="en">English</option>
+          <option value="bg">Български</option>
+        </select>
+      </label>
+
+      <label class="setting">
+        <span data-i18n="intervalLength">Interval length (minutes)</span>
+        <input type="number" id="set-interval" min="0.5" max="60" step="0.5">
+      </label>
+
+      <label class="setting">
+        <span data-i18n="shortCount">Short session intervals</span>
+        <input type="number" id="set-short" min="1" max="30" step="1">
+      </label>
+
+      <label class="setting">
+        <span data-i18n="longCount">Long session intervals</span>
+        <input type="number" id="set-long" min="1" max="30" step="1">
+      </label>
+
+      <label class="setting">
+        <span data-i18n="sound">Chime sound</span>
+        <span class="setting-inline">
+          <select id="set-sound"></select>
+          <button id="btn-preview" class="mini-btn" data-i18n="preview">Play</button>
+        </span>
+      </label>
+
+      <label class="setting">
+        <span data-i18n="voice">Voice guidance</span>
+        <input type="checkbox" id="set-voice" class="switch">
+      </label>
+    </div>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

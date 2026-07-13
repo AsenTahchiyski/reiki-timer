@@ -1,0 +1,26 @@
+{
+  "name": "Reiki Timer",
+  "short_name": "Reiki Timer",
+  "description": "Guided Reiki self-treatment timer with hand positions, chimes and voice guidance.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1d1730",
+  "theme_color": "#2d2440",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
