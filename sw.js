@@ -1,4 +1,4 @@
-const CACHE = "reiki-timer-v2";
+const CACHE = "reiki-timer-v3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -31,7 +31,9 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET" || !e.request.url.startsWith(self.location.origin)) return;
   e.respondWith(
     caches.match(e.request).then((cached) => {
-      const fresh = fetch(e.request)
+      // no-cache: revalidate with the server instead of trusting the
+      // 10-minute HTTP cache GitHub Pages sets, so updates land on next load.
+      const fresh = fetch(e.request, { cache: "no-cache" })
         .then((res) => {
           if (res.ok) {
             const clone = res.clone();
