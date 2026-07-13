@@ -262,6 +262,7 @@ $("btn-stop").addEventListener("click", () => {
   if (confirm(t(settings.lang, "confirmStop"))) stopSession(false);
 });
 
+bindSettings();
 applyLanguage();
 showView("home");
 
