@@ -1,4 +1,4 @@
-const CACHE = "reiki-timer-v3";
+const CACHE = "reiki-timer-v4";
 const ASSETS = [
   "./",
   "./index.html",

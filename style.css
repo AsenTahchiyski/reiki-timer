@@ -37,7 +37,18 @@ body {
 
 /* ---------- Home ---------- */
 .home-header { text-align: center; margin: 14vh 0 3rem; }
-.logo { font-size: 3.4rem; color: var(--accent); margin-bottom: .6rem; }
+.logo {
+  /* 霊気 — "reiki". Rendered as text (a proper CJK font glyph), unlike the old
+     ☸ character which phones drew from the emoji font as an upscaled bitmap. */
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Noto Serif CJK JP", serif;
+  font-size: 3rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: .22em;
+  text-indent: .22em; /* re-centre: letter-spacing adds a trailing gap */
+  color: var(--accent);
+  margin-bottom: .9rem;
+}
 h1 { font-size: 2rem; font-weight: 600; letter-spacing: .04em; }
 .tagline { color: var(--text-dim); margin-top: .5rem; }
 

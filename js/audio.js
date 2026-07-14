@@ -68,20 +68,81 @@ export function unlockAudio() {
   audioCtx();
 }
 
+let voices = [];
+let speakTimer = null;
+let keepAlive = null;
+
+// Higher score = better voice. Natural/neural network voices sound far less
+// robotic than the local eSpeak-style ones, which matters most for Bulgarian.
+function voiceScore(v, lang) {
+  const name = v.name.toLowerCase();
+  let s = 0;
+  if (/natural|neural|premium|enhanced/.test(name)) s += 8;
+  if (name.includes("google") || name.includes("online")) s += 4;
+  if (!v.localService) s += 2;
+  if (v.default) s += 1;
+  if (lang === "en" && v.lang.toLowerCase().startsWith("en-us")) s += 1;
+  return s;
+}
+
+function pickVoice(lang) {
+  const matches = voices.filter((v) =>
+    v.lang.toLowerCase().replace("_", "-").startsWith(lang)
+  );
+  return matches.sort((a, b) => voiceScore(b, lang) - voiceScore(a, lang))[0] || null;
+}
+
 export function speak(text, lang) {
   if (!("speechSynthesis" in window)) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = lang === "bg" ? "bg-BG" : "en-US";
-  u.rate = 0.95;
-  const voice = speechSynthesis.getVoices().find((v) => v.lang.toLowerCase().startsWith(lang));
-  if (voice) u.voice = voice;
-  speechSynthesis.speak(u);
+  stopSpeech();
+  // Chrome (notably on Windows) silently drops an utterance queued right
+  // after cancel(); wait a beat before speaking.
+  speakTimer = setTimeout(() => {
+    speakTimer = null;
+    const voice = pickVoice(lang);
+    // One utterance per sentence: prosody is better, natural pauses appear
+    // between sentences, and short utterances dodge Chrome's ~15 s cutoff.
+    const parts = text.split(/(?<=[.!?…])\s+/).filter(Boolean);
+    for (const part of parts) {
+      const u = new SpeechSynthesisUtterance(part);
+      u.lang = lang === "bg" ? "bg-BG" : "en-US";
+      // English: unhurried, slightly lower pitch. Bulgarian: modest slowdown
+      // only — dropping the rate further makes the synthetic voice sound worse.
+      u.rate = lang === "bg" ? 0.9 : 0.8;
+      u.pitch = lang === "bg" ? 1 : 0.88;
+      if (voice) u.voice = voice;
+      speechSynthesis.speak(u);
+    }
+    // Chrome desktop can wedge in a paused state; nudge it periodically.
+    speechSynthesis.resume();
+    clearInterval(keepAlive);
+    keepAlive = setInterval(() => {
+      if (!speechSynthesis.speaking) {
+        clearInterval(keepAlive);
+        keepAlive = null;
+      } else {
+        speechSynthesis.resume();
+      }
+    }, 5000);
+  }, 100);
 }
 
 export function stopSpeech() {
-  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  if (!("speechSynthesis" in window)) return;
+  clearTimeout(speakTimer);
+  speakTimer = null;
+  clearInterval(keepAlive);
+  keepAlive = null;
+  speechSynthesis.cancel();
 }
 
-// Voice list loads asynchronously in some browsers; warm it up.
-if ("speechSynthesis" in window) speechSynthesis.getVoices();
+// The voice list loads asynchronously in Chrome/Edge — an empty getVoices()
+// at speak time meant no voice on PC. Cache it and refresh on voiceschanged.
+if ("speechSynthesis" in window) {
+  const loadVoices = () => {
+    const v = speechSynthesis.getVoices();
+    if (v.length) voices = v;
+  };
+  loadVoices();
+  speechSynthesis.addEventListener?.("voiceschanged", loadVoices);
+}

@@ -11,6 +11,7 @@ const DEFAULTS = {
   longCount: 15,
   sound: "softBell",
   voice: true,
+  vibrate: false,
 };
 
 let settings = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") };
@@ -119,14 +120,37 @@ function togglePause() {
   tick();
 }
 
+// Vibrate the phone and post a notification with a vibration pattern.
+// A web app can't reach a paired watch directly, but Wear OS mirrors phone
+// notifications, so the watch buzzes on each interval too.
+async function vibrateInterval(index) {
+  if (!settings.vibrate) return;
+  const pattern = [300, 150, 300];
+  navigator.vibrate?.(pattern);
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  try {
+    const reg = await navigator.serviceWorker?.ready;
+    reg?.showNotification(t(settings.lang, "positionOf", { a: index + 1, b: session.totalIntervals }), {
+      body: getPosition(index)[settings.lang].title,
+      tag: "reiki-interval",
+      renotify: true,
+      vibrate: pattern,
+      icon: "icons/icon.svg",
+    });
+  } catch {
+    /* notifications unavailable — vibration on the phone still fired */
+  }
+}
+
 function announcePosition(index) {
   playSound(settings.sound);
+  vibrateInterval(index);
   if (settings.voice) {
     const pos = getPosition(index)[settings.lang];
     setTimeout(() => {
       // Guard: session may have been paused/stopped while the chime rang.
       if (session && session.currentIndex === index && session.runningSince) {
-        speak(`${index + 1}. ${pos.title}. ${pos.desc}`, settings.lang);
+        speak(`${t(settings.lang, "positionVoice", { a: index + 1 })}. ${pos.title}. ${pos.desc}`, settings.lang);
       }
     }, 1800);
   }
@@ -202,6 +226,7 @@ function loadSettingsForm() {
   $("set-long").value = settings.longCount;
   $("set-sound").value = settings.sound;
   $("set-voice").checked = settings.voice;
+  $("set-vibrate").checked = settings.vibrate;
 }
 
 function bindSettings() {
@@ -232,6 +257,14 @@ function bindSettings() {
   $("set-voice").addEventListener("change", (e) => {
     settings.voice = e.target.checked;
     saveSettings();
+  });
+  $("set-vibrate").addEventListener("change", async (e) => {
+    settings.vibrate = e.target.checked;
+    saveSettings();
+    // Notification permission is what lets the alert mirror to a watch.
+    if (settings.vibrate && "Notification" in window && Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
   });
   $("btn-preview").addEventListener("click", () => {
     unlockAudio();
