@@ -1,4 +1,4 @@
-const CACHE = "reiki-timer-v4";
+const CACHE = "reiki-timer-v5";
 const ASSETS = [
   "./",
   "./index.html",
@@ -31,6 +31,8 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET" || !e.request.url.startsWith(self.location.origin)) return;
   e.respondWith(
     caches.match(e.request).then((cached) => {
+      // Voice clips are immutable — once cached, skip the background refetch.
+      if (cached && e.request.url.includes("/audio/voice/")) return cached;
       // no-cache: revalidate with the server instead of trusting the
       // 10-minute HTTP cache GitHub Pages sets, so updates land on next load.
       const fresh = fetch(e.request, { cache: "no-cache" })

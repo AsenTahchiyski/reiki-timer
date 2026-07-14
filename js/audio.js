@@ -68,6 +68,65 @@ export function unlockAudio() {
   audioCtx();
 }
 
+/* ---------- Recorded voice clips ----------
+   Pre-generated neural-TTS MP3s (audio/voice/{lang}/…), played through the
+   already-unlocked AudioContext. Far better quality than browser speech
+   synthesis and independent of which TTS voices the device has installed.
+   Browser TTS below remains only as a fallback when a clip can't load. */
+
+const clipCache = new Map(); // url -> Promise<AudioBuffer>
+let clipSources = [];
+let clipToken = 0;
+
+function clipBuffer(url) {
+  if (!clipCache.has(url)) {
+    const p = fetch(url)
+      .then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((data) => audioCtx().decodeAudioData(data));
+    p.catch(() => clipCache.delete(url)); // don't cache failures
+    clipCache.set(url, p);
+  }
+  return clipCache.get(url);
+}
+
+export function prefetchClips(urls) {
+  urls.forEach((u) => clipBuffer(u).catch(() => {}));
+}
+
+// Plays clips back to back with a short breath between them. Returns false
+// when a clip can't be fetched/decoded so the caller can fall back to speak().
+export async function playClips(urls, gap = 0.35) {
+  const token = ++clipToken;
+  let buffers;
+  try {
+    buffers = await Promise.all(urls.map(clipBuffer));
+  } catch {
+    return false;
+  }
+  if (token !== clipToken) return true; // stopped while loading
+  const ac = audioCtx();
+  let t = ac.currentTime + 0.05;
+  clipSources = buffers.map((buf) => {
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    src.connect(ac.destination);
+    src.start(t);
+    t += buf.duration + gap;
+    return src;
+  });
+  return true;
+}
+
+function stopClips() {
+  clipToken++;
+  clipSources.forEach((s) => {
+    try { s.stop(); } catch { /* already ended */ }
+  });
+  clipSources = [];
+}
+
+/* ---------- Browser speech synthesis (fallback only) ---------- */
+
 let voices = [];
 let speakTimer = null;
 let keepAlive = null;
@@ -128,6 +187,7 @@ export function speak(text, lang) {
 }
 
 export function stopSpeech() {
+  stopClips();
   if (!("speechSynthesis" in window)) return;
   clearTimeout(speakTimer);
   speakTimer = null;

@@ -1,6 +1,6 @@
-import { t, STRINGS } from "./i18n.js";
+import { t, STRINGS, numberWord } from "./i18n.js";
 import { POSITIONS, getPosition, figureSVG } from "./positions.js";
-import { SOUND_IDS, playSound, unlockAudio, speak, stopSpeech } from "./audio.js";
+import { SOUND_IDS, playSound, unlockAudio, speak, stopSpeech, playClips, prefetchClips } from "./audio.js";
 
 const SETTINGS_KEY = "reiki-timer-settings";
 
@@ -90,6 +90,7 @@ function startSession(totalIntervals) {
   $("t-start").textContent = fmtClock(session.startedAt);
   showView("session");
   acquireWakeLock();
+  if (settings.voice) prefetchClips(voiceClipUrls(0, settings.lang));
   tickHandle = setInterval(tick, 250);
   tick();
 }
@@ -142,15 +143,32 @@ async function vibrateInterval(index) {
   }
 }
 
+// URLs of the pre-recorded clips for one announcement: "Position N" + body.
+function voiceClipUrls(index, lang) {
+  const pad = (n) => String(n).padStart(2, "0");
+  const urls = [];
+  if (index < 30) urls.push(`audio/voice/${lang}/num${pad(index + 1)}.mp3`);
+  urls.push(`audio/voice/${lang}/pos${pad((index % POSITIONS.length) + 1)}.mp3`);
+  return urls;
+}
+
 function announcePosition(index) {
   playSound(settings.sound);
   vibrateInterval(index);
   if (settings.voice) {
     const pos = getPosition(index)[settings.lang];
-    setTimeout(() => {
+    setTimeout(async () => {
       // Guard: session may have been paused/stopped while the chime rang.
-      if (session && session.currentIndex === index && session.runningSince) {
-        speak(`${t(settings.lang, "positionVoice", { a: index + 1 })}. ${pos.title}. ${pos.desc}`, settings.lang);
+      if (!(session && session.currentIndex === index && session.runningSince)) return;
+      if (index + 1 < session.totalIntervals) prefetchClips(voiceClipUrls(index + 1, settings.lang));
+      const played = await playClips(voiceClipUrls(index, settings.lang));
+      // Browser TTS only when the recorded clips can't load (e.g. offline
+      // before they were ever cached).
+      if (!played && session && session.currentIndex === index && session.runningSince) {
+        speak(
+          `${t(settings.lang, "positionVoice", { a: numberWord(settings.lang, index + 1) })}. ${pos.title}. ${pos.desc}`,
+          settings.lang
+        );
       }
     }, 1800);
   }
@@ -178,7 +196,14 @@ function tick() {
     session.finished = true;
     renderTimes(elapsed, totalMs);
     playSound(settings.sound, 3);
-    if (settings.voice) setTimeout(() => speak(t(settings.lang, "completeVoice"), settings.lang), 4500);
+    if (settings.voice) {
+      const lang = settings.lang;
+      setTimeout(async () => {
+        if (!(await playClips([`audio/voice/${lang}/complete.mp3`]))) {
+          speak(t(lang, "completeVoice"), lang);
+        }
+      }, 4500);
+    }
     stopSession(true);
     return;
   }

@@ -79,6 +79,21 @@ export const STRINGS = {
   },
 };
 
+// Spelled-out numbers for speech: digits like "1." get read as ordinals in
+// Bulgarian ("първи"), but the spoken form should be "едно", "две", …
+const NUMBER_WORDS = {
+  en: ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+    "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
+    "twenty-one", "twenty-two", "twenty-three", "twenty-four", "twenty-five", "twenty-six", "twenty-seven", "twenty-eight", "twenty-nine", "thirty"],
+  bg: ["едно", "две", "три", "четири", "пет", "шест", "седем", "осем", "девет", "десет",
+    "единадесет", "дванадесет", "тринадесет", "четиринадесет", "петнадесет", "шестнадесет", "седемнадесет", "осемнадесет", "деветнадесет", "двадесет",
+    "двадесет и едно", "двадесет и две", "двадесет и три", "двадесет и четири", "двадесет и пет", "двадесет и шест", "двадесет и седем", "двадесет и осем", "двадесет и девет", "тридесет"],
+};
+
+export function numberWord(lang, n) {
+  return NUMBER_WORDS[lang]?.[n - 1] || String(n);
+}
+
 export function t(lang, key, vars) {
   let s = STRINGS[lang]?.[key] ?? STRINGS.en[key] ?? key;
   if (vars) for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, v);

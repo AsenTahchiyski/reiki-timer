@@ -1,8 +1,9 @@
 # Reiki Timer
 
 A pure-frontend PWA for guided Reiki self-treatment sessions. No build step,
-no dependencies, no audio files — chimes are synthesised with the Web Audio
-API and position illustrations are inline SVG.
+no runtime dependencies — chimes are synthesised with the Web Audio API and
+position illustrations are inline SVG. Voice guidance plays pre-recorded
+neural-TTS clips (see below).
 
 ## Features
 
@@ -12,7 +13,10 @@ API and position illustrations are inline SVG.
   choose between Soft Bell (default), Tibetan Bowl, Chime, Gong or Beep.
 - At the start of each interval the hand position is shown with a large
   illustration and a short description of where to place your hands and why —
-  optionally read aloud (voice guidance uses the browser's speech synthesis).
+  optionally read aloud from pre-recorded clips ("Position N. Title.
+  Description.").
+- Optional vibration on each interval: the phone vibrates and a notification
+  is posted, which Wear OS mirrors to a paired smartwatch so it buzzes too.
 - Session progress: start time, expected end, elapsed and remaining time,
   per-interval countdown and an overall progress bar. Pause/resume and stop.
 - **English and Bulgarian** interface, positions and voice, switchable in
@@ -48,10 +52,22 @@ python3 -m http.server 8000
 3. The app will be served at `https://<you>.github.io/reiki-timer/`. All
    paths are relative, so it works under the subpath without changes.
 
+## Voice clips
+
+Spoken guidance lives in `audio/voice/{en,bg}/` as MP3s generated with
+Microsoft Edge neural voices (Christopher for English, Kalina for Bulgarian):
+`numNN.mp3` ("Position N"), `posNN.mp3` (title + description) and
+`complete.mp3`. Clips are fetched on demand and cached by the service worker.
+After changing position texts, regenerate with:
+
+```sh
+npm install --no-save msedge-tts
+node tools/generate-voice.mjs   # skips files that already exist
+```
+
 ## Notes
 
-- Bulgarian voice guidance depends on a Bulgarian text-to-speech voice being
-  installed on the device; if none is found the browser's default voice is
-  used.
+- If a voice clip can't be loaded (first-ever session while offline), the app
+  falls back to the browser's speech synthesis.
 - Timing is computed from wall-clock timestamps, so it stays accurate even
   when the browser throttles background tabs.
