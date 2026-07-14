@@ -36,7 +36,10 @@ body {
 .hidden { display: none !important; }
 
 /* ---------- Home ---------- */
-.home-header { text-align: center; margin: 14vh 0 3rem; }
+/* Auto margins (here and on .ghost-btn) share the free space, so the header
+   and buttons float centred and the Settings button stays on screen on any
+   viewport — no fixed vh offset that can push it below the fold. */
+.home-header { text-align: center; margin: auto 0 2.5rem; }
 .logo {
   /* 霊気 — "reiki". Rendered as text (a proper CJK font glyph), unlike the old
      ☸ character which phones drew from the emoji font as an upscaled bitmap. */

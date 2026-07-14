@@ -10,11 +10,20 @@ const DEFAULTS = {
   shortCount: 9,
   longCount: 15,
   sound: "softBell",
-  voice: true,
+  voice: false,
   vibrate: false,
+  settingsVersion: 2,
 };
 
 let settings = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") };
+
+// v2: voice guidance became opt-in; switch it off once for settings saved
+// under the old default. Users who want it can re-enable it in Settings.
+if (settings.settingsVersion !== 2) {
+  settings.voice = false;
+  settings.settingsVersion = 2;
+  saveSettings();
+}
 
 function saveSettings() {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
