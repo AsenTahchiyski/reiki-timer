@@ -11,7 +11,6 @@ const DEFAULTS = {
   longCount: 15,
   sound: "softBell",
   voice: false,
-  vibrate: false,
   settingsVersion: 2,
 };
 
@@ -130,28 +129,6 @@ function togglePause() {
   tick();
 }
 
-// Vibrate the phone and post a notification with a vibration pattern.
-// A web app can't reach a paired watch directly, but Wear OS mirrors phone
-// notifications, so the watch buzzes on each interval too.
-async function vibrateInterval(index) {
-  if (!settings.vibrate) return;
-  const pattern = [300, 150, 300];
-  navigator.vibrate?.(pattern);
-  if (!("Notification" in window) || Notification.permission !== "granted") return;
-  try {
-    const reg = await navigator.serviceWorker?.ready;
-    reg?.showNotification(t(settings.lang, "positionOf", { a: index + 1, b: session.totalIntervals }), {
-      body: getPosition(index)[settings.lang].title,
-      tag: "reiki-interval",
-      renotify: true,
-      vibrate: pattern,
-      icon: "icons/icon.svg",
-    });
-  } catch {
-    /* notifications unavailable — vibration on the phone still fired */
-  }
-}
-
 // URLs of the pre-recorded clips for one announcement: "Position N" + body.
 function voiceClipUrls(index, lang) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -163,7 +140,6 @@ function voiceClipUrls(index, lang) {
 
 function announcePosition(index) {
   playSound(settings.sound);
-  vibrateInterval(index);
   if (settings.voice) {
     const pos = getPosition(index)[settings.lang];
     setTimeout(async () => {
@@ -260,7 +236,6 @@ function loadSettingsForm() {
   $("set-long").value = settings.longCount;
   $("set-sound").value = settings.sound;
   $("set-voice").checked = settings.voice;
-  $("set-vibrate").checked = settings.vibrate;
 }
 
 function bindSettings() {
@@ -292,14 +267,6 @@ function bindSettings() {
     settings.voice = e.target.checked;
     saveSettings();
   });
-  $("set-vibrate").addEventListener("change", async (e) => {
-    settings.vibrate = e.target.checked;
-    saveSettings();
-    // Notification permission is what lets the alert mirror to a watch.
-    if (settings.vibrate && "Notification" in window && Notification.permission === "default") {
-      await Notification.requestPermission();
-    }
-  });
   $("btn-preview").addEventListener("click", () => {
     unlockAudio();
     playSound(settings.sound);
@@ -321,9 +288,14 @@ $("btn-long").addEventListener("click", () => startSession(settings.longCount));
 $("btn-settings").addEventListener("click", () => {
   loadSettingsForm();
   showView("settings");
+  // Push a history entry so the Android system back button (and gesture)
+  // returns to the home screen instead of exiting/minimising the PWA.
+  history.pushState({ view: "settings" }, "");
 });
-$("btn-back").addEventListener("click", () => showView("home"));
-$("btn-done").addEventListener("click", () => showView("home"));
+// In-app Back/Done pop that entry, which fires popstate → home (below).
+$("btn-back").addEventListener("click", () => history.back());
+$("btn-done").addEventListener("click", () => history.back());
+window.addEventListener("popstate", () => showView("home"));
 $("btn-pause").addEventListener("click", togglePause);
 $("btn-stop").addEventListener("click", () => {
   if (confirm(t(settings.lang, "confirmStop"))) stopSession(false);

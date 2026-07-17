@@ -19,7 +19,7 @@ body {
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   background: radial-gradient(circle at 50% -10%, var(--bg-soft), var(--bg) 70%);
   color: var(--text);
-  min-height: 100dvh;
+  min-height: 100svh;
   display: flex;
   justify-content: center;
 }
@@ -27,7 +27,7 @@ body {
 .view {
   width: 100%;
   max-width: 480px;
-  min-height: 100dvh;
+  min-height: 100svh;
   padding: max(1.2rem, env(safe-area-inset-top)) 1.2rem max(1.2rem, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
