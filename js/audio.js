@@ -117,7 +117,7 @@ export function prefetchClips(urls) {
 
 // Plays clips back to back with a short breath between them. Returns false
 // when a clip can't be fetched/decoded so the caller can fall back to speak().
-export async function playClips(urls, gap = 0.35) {
+export async function playClips(urls, gap = 0.15) {
   const token = ++clipToken;
   let buffers;
   try {

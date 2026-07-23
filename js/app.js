@@ -169,6 +169,7 @@ function announcePosition(index) {
 // User-triggered replay of the current position's voice guidance (no chime).
 async function replayVoice() {
   if (!settings.voice || !session || session.currentIndex < 0) return;
+  stopSpeech(); // cut off any voice still playing before replaying
   const index = session.currentIndex;
   if (!(await playClips(voiceClipUrls(index, settings.lang)))) {
     speak(positionVoiceText(index), settings.lang);
@@ -179,6 +180,7 @@ async function replayVoice() {
 // baseline; tick() then re-renders and re-announces the earlier position.
 function goPrevious() {
   if (!session || session.currentIndex <= 0) return;
+  stopSpeech(); // cut off any voice still playing for the current position
   const target = (session.currentIndex - 1) * session.intervalMs;
   session.elapsedBefore = target;
   if (session.runningSince) session.runningSince = Date.now();
@@ -189,6 +191,7 @@ function goPrevious() {
 // Jump forward to the start of the next interval, mirroring goPrevious().
 function goNext() {
   if (!session || session.currentIndex >= session.totalIntervals - 1) return;
+  stopSpeech(); // cut off any voice still playing for the current position
   const target = (session.currentIndex + 1) * session.intervalMs;
   session.elapsedBefore = target;
   if (session.runningSince) session.runningSince = Date.now();
