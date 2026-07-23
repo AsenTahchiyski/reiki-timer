@@ -1,6 +1,6 @@
 import { t, STRINGS, numberWord } from "./i18n.js";
 import { POSITIONS, getPosition, figureSVG } from "./positions.js";
-import { SOUND_IDS, playSound, unlockAudio, speak, stopSpeech, playClips, prefetchClips } from "./audio.js";
+import { SOUND_IDS, playSound, unlockAudio, speak, stopSpeech, playClips, prefetchClips, setChimeVolume, setVoiceVolume } from "./audio.js";
 
 const SETTINGS_KEY = "reiki-timer-settings";
 
@@ -11,6 +11,9 @@ const DEFAULTS = {
   longCount: 15,
   sound: "softBell",
   voice: false,
+  voiceGender: "female",
+  chimeVolume: 1,
+  voiceVolume: 1,
   settingsVersion: 2,
 };
 
@@ -95,6 +98,7 @@ function startSession(totalIntervals) {
   };
   $("btn-pause").classList.remove("paused");
   $("btn-pause").firstElementChild.textContent = t(settings.lang, "pause");
+  $("btn-replay").classList.toggle("hidden", !settings.voice);
   $("t-start").textContent = fmtClock(session.startedAt);
   showView("session");
   acquireWakeLock();
@@ -132,16 +136,22 @@ function togglePause() {
 // URLs of the pre-recorded clips for one announcement: "Position N" + body.
 function voiceClipUrls(index, lang) {
   const pad = (n) => String(n).padStart(2, "0");
+  const dir = `audio/voice/${lang}/${settings.voiceGender}`;
   const urls = [];
-  if (index < 30) urls.push(`audio/voice/${lang}/num${pad(index + 1)}.mp3`);
-  urls.push(`audio/voice/${lang}/pos${pad((index % POSITIONS.length) + 1)}.mp3`);
+  if (index < 30) urls.push(`${dir}/num${pad(index + 1)}.mp3`);
+  urls.push(`${dir}/pos${pad((index % POSITIONS.length) + 1)}.mp3`);
   return urls;
+}
+
+// Spoken fallback text for one position (used only when clips can't load).
+function positionVoiceText(index) {
+  const pos = getPosition(index)[settings.lang];
+  return `${t(settings.lang, "positionVoice", { a: numberWord(settings.lang, index + 1) })}. ${pos.title}. ${pos.desc}`;
 }
 
 function announcePosition(index) {
   playSound(settings.sound);
   if (settings.voice) {
-    const pos = getPosition(index)[settings.lang];
     setTimeout(async () => {
       // Guard: session may have been paused/stopped while the chime rang.
       if (!(session && session.currentIndex === index && session.runningSince)) return;
@@ -150,13 +160,30 @@ function announcePosition(index) {
       // Browser TTS only when the recorded clips can't load (e.g. offline
       // before they were ever cached).
       if (!played && session && session.currentIndex === index && session.runningSince) {
-        speak(
-          `${t(settings.lang, "positionVoice", { a: numberWord(settings.lang, index + 1) })}. ${pos.title}. ${pos.desc}`,
-          settings.lang
-        );
+        speak(positionVoiceText(index), settings.lang);
       }
     }, 1800);
   }
+}
+
+// User-triggered replay of the current position's voice guidance (no chime).
+async function replayVoice() {
+  if (!settings.voice || !session || session.currentIndex < 0) return;
+  const index = session.currentIndex;
+  if (!(await playClips(voiceClipUrls(index, settings.lang)))) {
+    speak(positionVoiceText(index), settings.lang);
+  }
+}
+
+// Jump back to the start of the previous interval by shifting the wall-clock
+// baseline; tick() then re-renders and re-announces the earlier position.
+function goPrevious() {
+  if (!session || session.currentIndex <= 0) return;
+  const target = (session.currentIndex - 1) * session.intervalMs;
+  session.elapsedBefore = target;
+  if (session.runningSince) session.runningSince = Date.now();
+  session.finished = false;
+  tick();
 }
 
 function renderPosition(index) {
@@ -170,6 +197,7 @@ function renderPosition(index) {
   $("pos-desc").textContent = loc.desc;
   $("figure-wrap").innerHTML = figureSVG(pos);
   $("back-note").classList.toggle("hidden", !pos.back);
+  $("btn-prev").disabled = index === 0;
 }
 
 function tick() {
@@ -184,7 +212,7 @@ function tick() {
     if (settings.voice) {
       const lang = settings.lang;
       setTimeout(async () => {
-        if (!(await playClips([`audio/voice/${lang}/complete.mp3`]))) {
+        if (!(await playClips([`audio/voice/${lang}/${settings.voiceGender}/complete.mp3`]))) {
           speak(t(lang, "completeVoice"), lang);
         }
       }, 4500);
@@ -236,6 +264,9 @@ function loadSettingsForm() {
   $("set-long").value = settings.longCount;
   $("set-sound").value = settings.sound;
   $("set-voice").checked = settings.voice;
+  $("set-gender").value = settings.voiceGender;
+  $("set-chime-vol").value = settings.chimeVolume;
+  $("set-voice-vol").value = settings.voiceVolume;
 }
 
 function bindSettings() {
@@ -267,6 +298,20 @@ function bindSettings() {
     settings.voice = e.target.checked;
     saveSettings();
   });
+  $("set-gender").addEventListener("change", (e) => {
+    settings.voiceGender = e.target.value;
+    saveSettings();
+  });
+  $("set-chime-vol").addEventListener("input", (e) => {
+    settings.chimeVolume = parseFloat(e.target.value);
+    setChimeVolume(settings.chimeVolume);
+    saveSettings();
+  });
+  $("set-voice-vol").addEventListener("input", (e) => {
+    settings.voiceVolume = parseFloat(e.target.value);
+    setVoiceVolume(settings.voiceVolume);
+    saveSettings();
+  });
   $("btn-preview").addEventListener("click", () => {
     unlockAudio();
     playSound(settings.sound);
@@ -292,16 +337,21 @@ $("btn-settings").addEventListener("click", () => {
   // returns to the home screen instead of exiting/minimising the PWA.
   history.pushState({ view: "settings" }, "");
 });
-// In-app Back/Done pop that entry, which fires popstate → home (below).
+// In-app Back pops that entry, which fires popstate → home (below).
 $("btn-back").addEventListener("click", () => history.back());
-$("btn-done").addEventListener("click", () => history.back());
+// The session never pushed a history entry, so Done returns home directly.
+$("btn-done").addEventListener("click", () => showView("home"));
 window.addEventListener("popstate", () => showView("home"));
 $("btn-pause").addEventListener("click", togglePause);
+$("btn-prev").addEventListener("click", goPrevious);
+$("btn-replay").addEventListener("click", replayVoice);
 $("btn-stop").addEventListener("click", () => {
   if (confirm(t(settings.lang, "confirmStop"))) stopSession(false);
 });
 
 bindSettings();
+setChimeVolume(settings.chimeVolume);
+setVoiceVolume(settings.voiceVolume);
 applyLanguage();
 showView("home");
 

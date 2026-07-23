@@ -2,11 +2,33 @@
 export const SOUND_IDS = ["softBell", "tibetanBowl", "chime", "gong", "beep"];
 
 let ctx = null;
+let chimeGain = null; // chimes route through here
+let voiceGain = null; // recorded voice clips route through here
+let chimeVolume = 1;
+let voiceVolume = 1;
 
 function audioCtx() {
   ctx ||= new (window.AudioContext || window.webkitAudioContext)();
   if (ctx.state === "suspended") ctx.resume();
+  if (!chimeGain) {
+    chimeGain = ctx.createGain();
+    chimeGain.gain.value = chimeVolume;
+    chimeGain.connect(ctx.destination);
+    voiceGain = ctx.createGain();
+    voiceGain.gain.value = voiceVolume;
+    voiceGain.connect(ctx.destination);
+  }
   return ctx;
+}
+
+export function setChimeVolume(v) {
+  chimeVolume = v;
+  if (chimeGain) chimeGain.gain.value = v;
+}
+
+export function setVoiceVolume(v) {
+  voiceVolume = v;
+  if (voiceGain) voiceGain.gain.value = v;
 }
 
 // One decaying partial: freq in Hz, when/dur in seconds relative to now.
@@ -20,7 +42,7 @@ function partial(ac, { freq, gain = 0.2, when = 0, dur = 3, attack = 0.005, type
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.exponentialRampToValueAtTime(gain, t0 + attack);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  osc.connect(g).connect(ac.destination);
+  osc.connect(g).connect(chimeGain);
   osc.start(t0);
   osc.stop(t0 + dur + 0.1);
 }
@@ -109,7 +131,7 @@ export async function playClips(urls, gap = 0.35) {
   clipSources = buffers.map((buf) => {
     const src = ac.createBufferSource();
     src.buffer = buf;
-    src.connect(ac.destination);
+    src.connect(voiceGain);
     src.start(t);
     t += buf.duration + gap;
     return src;
@@ -169,6 +191,7 @@ export function speak(text, lang) {
       // only — dropping the rate further makes the synthetic voice sound worse.
       u.rate = lang === "bg" ? 0.9 : 0.8;
       u.pitch = lang === "bg" ? 1 : 0.88;
+      u.volume = voiceVolume;
       if (voice) u.voice = voice;
       speechSynthesis.speak(u);
     }

@@ -30,6 +30,7 @@
         <span class="big-btn-sub" id="long-sub"></span>
       </button>
     </div>
+    <p class="screen-hint" data-i18n="keepScreenOn">Keep your screen on during the session — the timer may pause otherwise.</p>
     <button id="btn-settings" class="ghost-btn">⚙ <span data-i18n="settings">Settings</span></button>
   </main>
 
@@ -46,25 +47,27 @@
 
     <div class="interval-timer" id="interval-remaining">3:00</div>
 
-    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-block">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-ends">
+        <span class="progress-end">
+          <span class="time-label" data-i18n="started">Started</span>
+          <span class="time-value" id="t-start">–</span>
+        </span>
+        <span class="progress-end right">
+          <span class="time-label" data-i18n="ends">Ends</span>
+          <span class="time-value" id="t-end">–</span>
+        </span>
+      </div>
+      <div class="progress-sub">
+        <span><span class="time-value" id="t-elapsed">–</span> <span class="time-label" data-i18n="elapsed">Elapsed</span></span>
+        <span><span class="time-label" data-i18n="remaining">Remaining</span> <span class="time-value" id="t-remaining">–</span></span>
+      </div>
+    </div>
 
-    <div class="time-grid">
-      <div class="time-cell">
-        <span class="time-label" data-i18n="started">Started</span>
-        <span class="time-value" id="t-start">–</span>
-      </div>
-      <div class="time-cell">
-        <span class="time-label" data-i18n="ends">Ends</span>
-        <span class="time-value" id="t-end">–</span>
-      </div>
-      <div class="time-cell">
-        <span class="time-label" data-i18n="elapsed">Elapsed</span>
-        <span class="time-value" id="t-elapsed">–</span>
-      </div>
-      <div class="time-cell">
-        <span class="time-label" data-i18n="remaining">Remaining</span>
-        <span class="time-value" id="t-remaining">–</span>
-      </div>
+    <div class="session-controls-secondary">
+      <button id="btn-prev" class="ctrl-btn subtle"><span data-i18n="previous">Previous</span></button>
+      <button id="btn-replay" class="ctrl-btn subtle hidden"><span data-i18n="replayVoice">Replay voice</span></button>
     </div>
 
     <div class="session-controls">
@@ -125,6 +128,24 @@
       <label class="setting">
         <span data-i18n="voice">Voice guidance</span>
         <input type="checkbox" id="set-voice" class="switch">
+      </label>
+
+      <label class="setting">
+        <span data-i18n="voiceType">Voice</span>
+        <select id="set-gender">
+          <option value="female" data-i18n="voiceFemale">Female</option>
+          <option value="male" data-i18n="voiceMale">Male</option>
+        </select>
+      </label>
+
+      <label class="setting">
+        <span data-i18n="chimeVolume">Chime volume</span>
+        <input type="range" id="set-chime-vol" class="slider" min="0" max="1" step="0.05">
+      </label>
+
+      <label class="setting">
+        <span data-i18n="voiceVolume">Voice volume</span>
+        <input type="range" id="set-voice-vol" class="slider" min="0" max="1" step="0.05">
       </label>
     </div>
   </main>
