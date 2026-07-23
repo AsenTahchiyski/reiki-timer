@@ -186,6 +186,16 @@ function goPrevious() {
   tick();
 }
 
+// Jump forward to the start of the next interval, mirroring goPrevious().
+function goNext() {
+  if (!session || session.currentIndex >= session.totalIntervals - 1) return;
+  const target = (session.currentIndex + 1) * session.intervalMs;
+  session.elapsedBefore = target;
+  if (session.runningSince) session.runningSince = Date.now();
+  session.finished = false;
+  tick();
+}
+
 function renderPosition(index) {
   const pos = getPosition(index);
   const loc = pos[settings.lang];
@@ -198,6 +208,7 @@ function renderPosition(index) {
   $("figure-wrap").innerHTML = figureSVG(pos);
   $("back-note").classList.toggle("hidden", !pos.back);
   $("btn-prev").disabled = index === 0;
+  $("btn-next").disabled = index === session.totalIntervals - 1;
 }
 
 function tick() {
@@ -344,6 +355,7 @@ $("btn-done").addEventListener("click", () => showView("home"));
 window.addEventListener("popstate", () => showView("home"));
 $("btn-pause").addEventListener("click", togglePause);
 $("btn-prev").addEventListener("click", goPrevious);
+$("btn-next").addEventListener("click", goNext);
 $("btn-replay").addEventListener("click", replayVoice);
 $("btn-stop").addEventListener("click", () => {
   if (confirm(t(settings.lang, "confirmStop"))) stopSession(false);
