@@ -12,17 +12,21 @@ neural-TTS clips (see below).
 - A chime plays at the start of the session and at the end of every interval;
   choose between Soft Bell (default), Tibetan Bowl, Chime, Gong or Beep.
 - At the start of each interval the hand position is shown with a large
-  illustration and a short description of where to place your hands and why —
-  optionally read aloud from pre-recorded clips ("Position N. Title.
-  Description.").
-- Optional vibration on each interval: the phone vibrates and a notification
-  is posted, which Wear OS mirrors to a paired smartwatch so it buzzes too.
-- Session progress: start time, expected end, elapsed and remaining time,
-  per-interval countdown and an overall progress bar. Pause/resume and stop.
+  illustration and a short description of where to place your hands and why.
+- Optional voice guidance (off by default) reads each position aloud from
+  pre-recorded clips ("Position N. Title. Description."), in a male or
+  female voice.
+- Separate chime and voice volume sliders.
+- Session controls: Previous, Replay voice and Next to move between positions
+  or hear the current one again; pause/resume and stop.
+- Session progress: start time and expected end above the progress bar,
+  elapsed and remaining time below it, plus a per-interval countdown.
 - **English and Bulgarian** interface, positions and voice, switchable in
   Settings.
 - Installable PWA, works fully offline, keeps the screen awake during a
-  session (Wake Lock API where available).
+  session (Wake Lock API where available). On Android, keep the screen on
+  during a session — background power management may otherwise pause the
+  timer.
 
 ## Run locally
 
@@ -54,15 +58,16 @@ python3 -m http.server 8000
 
 ## Voice clips
 
-Spoken guidance lives in `audio/voice/{en,bg}/` as MP3s generated with
-Microsoft Edge neural voices (Christopher for English, Kalina for Bulgarian):
-`numNN.mp3` ("Position N"), `posNN.mp3` (title + description) and
-`complete.mp3`. Clips are fetched on demand and cached by the service worker.
+Spoken guidance lives in `audio/voice/{en,bg}/{male,female}/` as MP3s
+generated with Microsoft Edge neural voices (English: Christopher / Jenny;
+Bulgarian: Borislav / Kalina): `numNN.mp3` ("Position N"), `posNN.mp3`
+(title + description) and `complete.mp3`. Clips are fetched on demand and
+cached by the service worker.
 After changing position texts, regenerate with:
 
 ```sh
 npm install --no-save msedge-tts
-node tools/generate-voice.mjs   # skips files that already exist
+node tools/generate-voice.mjs   # skips existing files — delete stale MP3s first
 ```
 
 ## Notes
