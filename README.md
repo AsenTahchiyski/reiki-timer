@@ -5,6 +5,10 @@ no runtime dependencies — chimes are synthesised with the Web Audio API and
 position illustrations are inline SVG. Voice guidance plays pre-recorded
 neural-TTS clips (see below).
 
+<img width="270" height="585" alt="Screenshot_20261023_162636_Brave" src="https://github.com/user-attachments/assets/b76b8ff7-5bba-4c66-9738-7ffd3de7a75b" />
+<img width="270" height="585" alt="Screenshot_20261023_162647_Brave" src="https://github.com/user-attachments/assets/3abd7e73-80dc-4e8c-825d-8079ae0d6cfd" />
+<img width="270" height="585" alt="Screenshot_20261023_162657_Brave" src="https://github.com/user-attachments/assets/cf50a811-b388-42bb-904e-d6e5d2dcef07" />
+
 ## Features
 
 - **Short (9 × 3 min) and long (15 × 3 min) sessions** — counts and interval
